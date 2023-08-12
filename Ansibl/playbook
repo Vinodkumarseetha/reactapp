@@ -1,0 +1,93 @@
+---
+- name: Install Jenkins, Docker, and Docker Compose
+  hosts: localhost
+  become: yes
+  tasks:
+    - name: Add public key to authorized_keys
+      authorized_key:
+        user: ubuntu
+        key: "{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
+      become_user: ubuntu
+
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+
+    - name: Install Docker prerequisites
+      apt:
+        name: "{{ item }}"
+        state: present
+      loop:
+        - apt-transport-https
+        - ca-certificates
+        - curl
+        - software-properties-common
+
+    - name: Add Docker APT repository key
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+
+    - name: Add Docker APT repository
+      apt_repository:
+        repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable
+        state: present
+
+    - name: Install Docker
+      apt:
+        name: docker-ce
+        state: present
+
+    - name: Add user to 'docker' group
+      user:
+        name: ubuntu
+        groups: docker
+        append: yes
+
+    - name: Install Docker Compose
+      pip:
+        name: docker-compose
+        state: present
+
+    - name: Install Jenkins prerequisites
+      apt:
+        name: "{{ item }}"
+        state: present
+      loop:
+        - openjdk-11-jdk
+        - gnupg
+        - software-properties-common
+
+    - name: Add Jenkins repository key
+      apt_key:
+        url: https://pkg.jenkins.io/debian/jenkins.io.key
+        state: present
+
+    - name: Add Jenkins APT repository
+      apt_repository:
+        repo: deb https://pkg.jenkins.io/debian binary/
+        state: present
+
+    - name: Install Jenkins
+      apt:
+        name: jenkins
+        state: present
+
+    - name: Start Jenkins service
+      service:
+        name: jenkins
+        state: started
+        enabled: yes
+
+    - name: Clone GitHub repository
+      git:
+        repo: https://github.com/Vinodkumarseetha/reactapp.git
+        dest: /reactapp
+        version: main  # or your preferred branch/tag
+
+    - name: Run Docker Compose for deployment
+      command: docker-compose up -d
+      args:
+        chdir: /reactapp  # Path to the cloned repository
+
+# Add more tasks as needed for configuration and other services...
