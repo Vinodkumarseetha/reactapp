@@ -1,0 +1,32 @@
+---
+- name: Install Jenkins and Deploy Service
+  hosts: your_ec2_instance_public_ip
+  become: yes
+
+  tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+
+    - name: Install Java
+      apt:
+        name: openjdk-8-jdk
+        state: present
+
+    - name: Install Jenkins
+      apt:
+        name: jenkins
+        state: present
+
+    - name: Start Jenkins
+      service:
+        name: jenkins
+        state: started
+
+    - name: Clone GitHub Repo
+      git:
+        repo: https://github.com/Vinodkumarseetha/reactapp.git
+        dest: /reactapp
+
+    - name: Build and Deploy Docker Compose
+      command: docker-compose -f /reactapp/docker-compose.yml up -d
